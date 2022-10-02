@@ -6,6 +6,7 @@
 package project1;
 
 import java.awt.event.ActionListener;
+import java.util.Random;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -92,7 +93,7 @@ public class Project1 extends Application {
         Label resultsSort = new Label("Sort: ");
         Label resultsComparisons = new Label("Comparisons: ");
         Label resultsMovements = new Label("Movements: ");
-        Label resultsTotalTime = new Label("Total time: ");
+        Label resultsTotalTime = new Label("Total time (ms): ");
         
         // The textfields are being set to read only, hence the <variable>.setEditable(false);
         TextField resultsNText = new TextField();
@@ -160,44 +161,234 @@ public class Project1 extends Application {
             
             @Override
             public void handle(ActionEvent event) {
+                // initialize variables
                 String sizeInput;
                 String arrayType;
                 String algorithmType;
+                int sizeInt;
+                // results array that displays the algorithm results to gui
+                String[] resultsArray;
                 sizeInput = listSize.getText();
                 arrayType = createArrayType.getSelectedToggle().toString();
                 algorithmType = algorithmSelection.getSelectedToggle().toString();
                 System.out.println("Variables initialized and declared, calling beginProcess function");
                 //call the starting function
-                beginProcess(sizeInput, arrayType, algorithmType);
+                sizeInt = beginProcess(sizeInput);
+                
+                // validation of sizeInt variable. If value of variable is not properly validated, end operation.
+                if (sizeInt == -1 || sizeInt < 1) {
+                    System.out.println("Invalid List Size Input");
+                    return;
+                }
+                // call resultsArray function that determines the array type to generate and what algorithm to run for sorting
+                // returns the statistics of the sort and then displays into the gui with the setText actions below this method call.
+                resultsArray = runSorting(sizeInt, arrayType, algorithmType);
+                
+                // display the results in the GUI
+                resultsNText.setText(resultsArray[0]);
+                resultsDataTypeText.setText(resultsArray[1]);
+                resultsSortText.setText(resultsArray[2]);
+                resultsComparisonsText.setText(resultsArray[3]);
+                resultsMovementsText.setText(resultsArray[4]);
+                resultsTotalTimeText.setText(resultsArray[5]);
+                
+                // also output the results to console
+                System.out.println("\nExperiement Results");
+                System.out.println("Input Size: " + resultsArray[0]);
+                System.out.println("Data Type: " + resultsArray[1]);
+                System.out.println("Sort: " + resultsArray[2]);
+                System.out.println("Comparisons: " + resultsArray[3]);
+                System.out.println("Movements: " + resultsArray[4]);
+                System.out.println("Total Time (ms): " + resultsArray[5]);
                 
             }
         });
     }
-
-    /**
-     * @param args the command line arguments
-     */
     public static void main(String[] args) {
         launch(args);
         
     }
-    static void beginProcess(String sizeInput, String arrayType, String algorithmType) {
+    static int beginProcess(String sizeInput) {
         // initialize and declare variables from input textfields and radio buttons
         int sizeInt;
-        System.out.println(sizeInput);
-        System.out.println(arrayType);
-        System.out.println(algorithmType);
+        
+
         //try catch logic for converting the textfield into an integer value. If error, output to console.
         try {
             sizeInt = Integer.parseInt(sizeInput);
+            return sizeInt;
         } catch(NumberFormatException e) {
-            System.out.println("Failed to convert array size string input to integer.");
-            return;
+            System.out.println("Failed to convert array size string input to integer. Returning.");
+            return -1;
         }
+    }
+    String[] runSorting(int sizeInt, String arrayType, String algorithmType) {
+        // initialize array that will be used for sorting algorithms
+        int[] testingArray;
+        String[] resultsArray = new String[6];
+        int[] sortingStatistics = null;
         // get arrayType input then call the correct array creation function.
-        
-        
+        // if else statements for calling array creation function
+        resultsArray[0] = String.valueOf(sizeInt);
+        if (arrayType.contains("InOrder")) {
+            System.out.println("Array type to call is Inorder");
+            resultsArray[1] = "InOrder";
+            testingArray = createInOrder(sizeInt);
+        } else if (arrayType.contains("ReverseOrder")) {
+            System.out.println("Array type to call is ReverseOrder");
+            resultsArray[1] = "ReverseOrder";
+            testingArray = createReverseOrder(sizeInt);
+        } else if (arrayType.contains("AlmostOrder")) {
+            System.out.println("Array type to call is AlmostOrder");
+            resultsArray[1] = "AlmostOrder";
+            testingArray = createAlmostOrder(sizeInt);
+        } else {
+            System.out.println("Array type to call is Random");
+            resultsArray[1] = "Random";
+            testingArray = createRandom(sizeInt);
+        }
+        System.out.println("Returned Array size: " + testingArray.length);
         // get algorithm type and pass the newly created array to the correct algorithm to sort
+        // I will use Systam.nanoTime() before running the sorting method and then again once the results are returned and get the difference to have my running time.
+        long startTime;
+        long endTime;
+        long runningTime;
+        if (algorithmType.contains("Insertion Sort")) {
+            System.out.println("Algorithm to run is Insertion Sort");
+            resultsArray[2] = "Insertion Sort";
+            startTime = System.nanoTime(); // start timer
+            InsertionSort isort = new InsertionSort();
+            isort.insertionSort(testingArray);
+            endTime = System.nanoTime(); // end timer
+            runningTime = (endTime - startTime) / 1000000;
+            // get the comparison and movement counters
+            resultsArray[3] = String.valueOf(isort.comparisons());
+            resultsArray[4] = String.valueOf(isort.movements());
+        } else if (algorithmType.contains("Selection Sort")) {
+            System.out.println("Algorithm to run is Selection Sort");
+            resultsArray[2] = "Selection Sort";
+            startTime = System.nanoTime(); // start timer
+            SelectionSort ssort = new SelectionSort();
+            ssort.selectionSort(testingArray);
+            endTime = System.nanoTime(); // end timer
+            runningTime = (endTime - startTime) / 1000000;
+            // get the comparison and movement counters
+            resultsArray[3] = String.valueOf(ssort.comparisons());
+            resultsArray[4] = String.valueOf(ssort.movements());
+        } else if (algorithmType.contains("Quick Sort")) {
+            System.out.println("Algorithm to run is Quick Sort");
+            resultsArray[2] = "Quick Sort";
+            startTime = System.nanoTime(); // start timer
+            QuickSort qsort = new QuickSort();
+            qsort.quickSort(testingArray);
+            endTime = System.nanoTime(); // end timer
+            runningTime = (endTime - startTime) / 1000000;
+            // get the comparison and movement counters
+            resultsArray[3] = String.valueOf(qsort.comparisons());
+            resultsArray[4] = String.valueOf(qsort.movements());
+        } else if (algorithmType.contains("Merge Sort")) {
+            System.out.println("Algorithm to run is Merge Sort");
+            resultsArray[2] = "Merge Sort";
+            startTime = System.nanoTime(); // start timer
+            MergeSort msort = new MergeSort();
+            msort.resetCounters();
+            msort.mergeSort(testingArray);
+            endTime = System.nanoTime(); // end timer
+            runningTime = (endTime - startTime) / 1000000;
+            // get the comparison and movement counters
+            resultsArray[3] = String.valueOf(msort.comparisons());
+            resultsArray[4] = String.valueOf(msort.movements());
+        } else if (algorithmType.contains("Heap Sort")) {
+            System.out.println("Algorithm to run is Heap Sort");
+            resultsArray[2] = "Heap Sort";
+            // since the heapSort function requires E[], I can simply convert my int[] to an Integer[]
+            // going to call Integer[] as heapArray
+            Integer[] heapArray = new Integer[testingArray.length];
+            int i=0;
+            for (int value : testingArray) {
+                heapArray[i++] = Integer.valueOf(value);
+            }
+            HeapSort hsort = new HeapSort();
+            startTime = System.nanoTime(); // start timer
+            hsort.heapSort(heapArray);
+            endTime = System.nanoTime(); // end timer
+            // get the comparison and movement counters
+            resultsArray[3] = String.valueOf(hsort.comparisons());
+            resultsArray[4] = String.valueOf(hsort.movements());
+            runningTime = (endTime - startTime) / 1000000;
+        } else {
+            System.out.println("Algorithm to run is Radix Sort");
+            resultsArray[2] = "Radix Sort";
+            RadixSort rsort = new RadixSort();
+            startTime = System.nanoTime(); // start timer
+            rsort.radixsort(testingArray, sizeInt);
+            endTime = System.nanoTime(); // end timer
+            // get the comparison and movement counters
+            resultsArray[3] = String.valueOf(rsort.comparisons());
+            resultsArray[4] = String.valueOf(rsort.movements());
+            runningTime = (endTime - startTime) / 1000000;
+        } 
+        
+        // calculate the running time
+        
+        
+        resultsArray[5] = String.valueOf(runningTime);
+        return resultsArray;
+        
+    }
+    
+    // functions for creating array types
+    //InOrder function
+    static int[] createInOrder(int sizeInt) {
+        int[] createdArray = new int[sizeInt];
+        int i;
+        for (i=0;i<sizeInt;i++) {
+            createdArray[i] = i;
+//            System.out.println(createdArray[i]);
+        }
+        System.out.println("created array length: " + createdArray.length);
+        return createdArray;
+    }
+    //ReverseOrder function
+    static int[] createReverseOrder(int sizeInt) {
+        int[] createdArray = new int[sizeInt];
+        int i;
+        for (i=0;i<sizeInt;i++) {
+            createdArray[i] = sizeInt-i;
+//            System.out.println(createdArray[i]);
+        }
+        System.out.println("created array length: " + createdArray.length);
+        return createdArray;
+    }
+    //AlmostOrder function
+    static int[] createAlmostOrder(int sizeInt) {
+        int[] createdArray = new int[sizeInt];
+        int i;
+        Random rand = new Random();
+        for (i=0;i<sizeInt;i++) {
+            // in this loop, I'm going to have if i%3 == 0, then insert a dirty value (random value ranging from 0 to sizeInt value-1
+            if (i%3 == 0) {
+                createdArray[i] = rand.nextInt(sizeInt);
+            } else {
+                createdArray[i] = i;
+            }
+//            System.out.println(createdArray[i]);
+            
+        }
+        System.out.println("created array length: " + createdArray.length);
+        return createdArray;
+    }
+    //RandomOrder function
+    static int[] createRandom(int sizeInt) {
+        int[] createdArray = new int[sizeInt];
+        int i;
+        Random rand = new Random();
+        for (i=0;i<sizeInt;i++) {
+            createdArray[i] = rand.nextInt(sizeInt);
+//            System.out.println(createdArray[i]);
+        }
+        System.out.println("created array length: " + createdArray.length);
+        return createdArray;
     }
 }
     
